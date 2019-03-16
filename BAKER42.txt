@@ -1,0 +1,11 @@
+A380220190206                                                                                                                   
+B2142                                                                                                                           
+C4600000312672201902060001001491059102     LEE OILFIELD SERVICE LTD      Baker Hughes Canada Co.       2000572439 
+C4600000312672201902060001001491059102     LEE OILFIELD SERVICE LTD      Baker Hughes Canada Co.       2000572439 
+C4600000312672201902060001001491059102     LEE OILFIELD SERVICE LTD      Baker Hughes Canada Co.       2000572439 
+C4600000312672201902060001001491059102     LEE OILFIELD SERVICE LTD      Baker Hughes Canada Co.       2000572439 
+C4600000312672201902060001001491059102     LEE OILFIELD SERVICE LTD      Baker Hughes Canada Co.       2000572439 
+C4600000312672201902060001002491059113     LEE OILFIELD SERVICE PTD      Baker Hughes Canada Yo.       2000572469               
+X00000000000000000000000000004197881300000047                                                                                   
+Z000001                                                                                                                         
+
