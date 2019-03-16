@@ -1,0 +1,119 @@
+package com.file;
+
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+public class ExcelWriter {
+
+	//private static String[] columns={"Name","Email","DOB","Salary"};
+	private static String[] columns={"Name","Email","Salary"};
+	private static List<Employee> employees = new ArrayList<>();
+	//public static String custname;
+	//public static String custemail;
+	//public static double sal;
+	
+	public static String strval="Rajivrajiv123@gmail.com12000.00";	
+	
+	
+	public static String custname= strval.substring(0, 4);
+	public static String custemail= strval.substring(5, 23);
+	public static String sal= strval.substring(24, 31);
+	
+	
+	static{
+		Calendar dob = Calendar.getInstance();
+		dob.set(1972, 7, 21);
+		employees.add(new Employee(custname,custemail,sal));
+		dob.set(1974, 10, 23);
+		/*employees.add(new Employee("Venkat", "Venkat.konanki6@gmail.com", dob.getTime(), 118000.00));
+		dob.set(1994, 11, 22);
+		employees.add(new Employee("NAme1", "Name1@gmail.com", dob.getTime(), 32000.00));
+		dob.set(1994, 11, 22);
+		employees.add(new Employee("NAme2", "Name2@gmail.com", dob.getTime(), 31000.00));
+		dob.set(1972, 7, 21);
+		employees.add(new Employee("name3","rajiv123@gmail.com",dob.getTime(),12000.00));
+		dob.set(1974, 10, 23);
+		employees.add(new Employee("name4", "Venkat.konanki6@gmail.com", dob.getTime(), 118000.00));
+		dob.set(1994, 11, 22);
+		employees.add(new Employee("NAme5", "Name1@gmail.com", dob.getTime(), 32000.00));
+		dob.set(1994, 11, 22);
+		employees.add(new Employee("NAme6", "Name2@gmail.com", dob.getTime(), 31000.00));*/
+	}
+	
+	
+	
+	public static void main(String[] args) throws IOException {
+		// TODO Auto-generated method stub
+		
+		Workbook wb= new XSSFWorkbook();
+		
+		CreationHelper creationhelp= wb.getCreationHelper();
+		
+		Sheet sheet= wb.createSheet("Employee");
+		Font headerFont = wb.createFont();
+		//Font headerFont = (Font) wb.createFont();
+		 //headerFont.setBold(true);
+		headerFont.setFontHeightInPoints((short) 14);
+		
+		headerFont.setColor(IndexedColors.BLUE_GREY.getIndex());
+		
+		CellStyle headerCellStyle = wb.createCellStyle();
+		headerCellStyle.setFont(headerFont);
+		
+		Row headerrow = sheet.createRow(0);
+		
+		for (int i = 0; i < columns.length; i++) {
+			Cell cell = headerrow.createCell(i);
+			cell.setCellValue(columns[i]);
+			cell.setCellStyle(headerCellStyle);
+			
+		}
+		//Formating date cell
+		
+		CellStyle dateCellStyle = wb.createCellStyle();
+		dateCellStyle.setDataFormat(creationhelp.createDataFormat().getFormat("dd-MM-yyyy"));
+		
+		int rowNum=1;
+		for (Employee employee : employees) {
+			Row row= sheet.createRow(rowNum++);
+			
+			row.createCell(0).setCellValue(employee.getName());
+			//row.createCell(0).setCellValue(employee.getName());
+			row.createCell(1).setCellValue(employee.getEmail());
+			/*Cell dobcell= row.createCell(2);
+			dobcell.setCellValue(employee.getDOB());
+			dobcell.setCellStyle(dateCellStyle);*/
+			row.createCell(3).setCellValue(employee.getSalary());
+			
+			//resize the column cells
+			for (int i = 0; i < columns.length; i++) {
+				sheet.autoSizeColumn(i);
+				
+			}
+			FileOutputStream fos = new FileOutputStream("C:\\Users\\vg86168\\Desktop\\AutoFiles\\poi-generated-file4.xlsx");
+			wb.write(fos);
+			fos.close();		
+			//wb.close();
+		}
+		wb.close();
+	
+	}
+
+
+}
