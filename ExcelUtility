@@ -1,0 +1,618 @@
+package net.goc.commonFunctions;
+
+import static org.testng.Assert.assertNotNull;
+
+import java.awt.List;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import com.cucumber.listener.Reporter;
+import com.cucumber.runner.TestNGCukesRunner;
+
+import net.goc.applicationFunction.ApplicationsVariables_Common;
+
+public class ExcelUtility implements ExcelUtilityColumnNames {
+	
+	public static File compareExcelDir = null;
+	public static File compareExcel = null;
+	public static XSSFWorkbook compareExcelWorkbook = null;
+	public static XSSFSheet compareExcelSheet = null;
+	public static int compareExcelRowNum = 0;
+	public static Row compareExcelRow = null;
+	public static ArrayList<String> fileList = null;
+	public static ArrayList<String> dbList = null;
+	public static ArrayList<String> statusList = null;
+
+	public static File fileMappingDir = null;
+	public static File fileMappingExcel = null;
+
+	public static XSSFWorkbook fileOutputWorkbook = null;
+	public static XSSFSheet fileOutputSheet = null;
+	public static Row fileOutputRow = null;
+
+	public static XSSFWorkbook fileWorkBook = null;
+	public static XSSFSheet fileSheet = null;
+
+	public static XSSFWorkbook dbWorkBook = null;
+	public static XSSFSheet dbSheet = null;
+
+	
+	public static HSSFWorkbook UIfileWorkBook = null;
+	public static HSSFSheet UIfileSheet = null;
+	
+	public static int transactionCountInFiles = 0;
+	public static ArrayList<String> creditOrDebit = new ArrayList<String>();
+	public static ArrayList<String> branchCode = new ArrayList<String>();
+	public static ArrayList<String> amount = new ArrayList<String>();
+	public static ArrayList<String> transactionDate = new ArrayList<String>();
+	public static ArrayList<String> payerIDNumber = new ArrayList<String>();
+	public static ArrayList<String> payerPayeeAcc = new ArrayList<String>();
+	public static ArrayList<String> payerPayeeDet = new ArrayList<String>();
+	public static ArrayList<String> relationshipName = new ArrayList<String>();
+	public static ArrayList<String> referenceIdentification = new ArrayList<String>();
+	public static ArrayList<String> localIgnoreColumnDBToUI = new ArrayList<String>();
+
+	public static void EFTBakerOutputHeader(String sheetName) throws Exception {
+
+		try {
+			fileMappingDir = new File(System.getProperty("user.dir") + "/File Mapping/");
+			fileMappingDir.mkdir();
+			fileMappingExcel = new File(fileMappingDir + "/" + "File Mapping" + ".xlsx");
+			if (fileMappingExcel.exists()) {
+				fileOutputWorkbook = new XSSFWorkbook(
+						new FileInputStream(fileMappingDir + "/" + "File Mapping" + ".xlsx"));
+
+			} else {
+				fileOutputWorkbook = new XSSFWorkbook();
+			}
+			try {
+				fileOutputSheet = fileOutputWorkbook.createSheet(sheetName);
+			} catch (IllegalArgumentException illegalException) {
+
+				fileOutputWorkbook.removeSheetAt(fileOutputWorkbook.getSheetIndex(sheetName));
+				fileOutputSheet = fileOutputWorkbook.createSheet(sheetName);
+			}
+			fileOutputRow = fileOutputSheet.createRow(0);
+			fileOutputRow.createCell(0).setCellValue(debitORCredit);
+			fileOutputRow.createCell(1).setCellValue(branchCodes);
+			fileOutputRow.createCell(2).setCellValue(Amount);
+			fileOutputRow.createCell(3).setCellValue(OriginalValueDate);
+			fileOutputRow.createCell(4).setCellValue(Institution);
+			fileOutputRow.createCell(5).setCellValue(PayeeOrPayorAccount);
+			fileOutputRow.createCell(6).setCellValue(PayeeOrPayor);
+			fileOutputRow.createCell(7).setCellValue(Relationshipname);
+			fileOutputRow.createCell(8).setCellValue(ReferenceIdentification);
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName
+					+ ApplicationsVariables_Common.reportSpace10 + "CreatedHeader in"
+					+ ApplicationsVariables_Common.reportSpace10 + "" + ApplicationsVariables_Common.reportSpace17
+					+ "\'" + fileOutputSheet.getSheetName() + "\'");
+
+		} catch (Exception exception) {
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName
+					+ ApplicationsVariables_Common.reportSpace10 + "" + ApplicationsVariables_Common.reportSpace10
+					+ "ErrorCreatingHeader" + ApplicationsVariables_Common.reportSpace10 + "\'" + "" + "\'");
+			throw new Exception(exception);
+		}
+
+	}
+
+	public void bakerFileToExcel(String fileName) throws Throwable {
+		try {
+			BufferedReader br = null;
+			FileReader fr = null;
+
+			//Changed the file location
+			//fr = new FileReader(System.getProperty("user.dir") + "\\SourceFilePath\\" + fileName + ".txt");
+			fr = new FileReader(System.getProperty("user.dir") + "\\DestinationFilePath\\" + fileName + ".txt");
+			
+			br = new BufferedReader(fr);
+			String sCurrentLine;
+
+			while ((sCurrentLine = br.readLine()) != null) {
+				if (sCurrentLine.startsWith("C")) {
+					transactionCountInFiles++;
+					creditOrDebit.add(sCurrentLine.substring(0, 1));
+					branchCode.add(sCurrentLine.substring(1, 4));
+					amount.add(removeLeadingZeros(sCurrentLine.substring(4, 14)));
+					transactionDate.add(modifyDateFormat(sCurrentLine.substring(14, 22))); //
+					payerIDNumber.add(sCurrentLine.substring(22, 31)); //
+					payerPayeeAcc.add(sCurrentLine.substring(31, 43).trim()); //
+					payerPayeeDet.add(sCurrentLine.substring(43, 73).trim()); //
+					relationshipName.add(sCurrentLine.substring(73, 103).trim()); //
+					referenceIdentification.add(sCurrentLine.substring(103, 114).trim()); //
+
+				}
+			}
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "Number of Transactions Present in File" + ApplicationsVariables_Common.reportSpace10 + ""
+							+ ApplicationsVariables_Common.reportSpace17 + "\'" + transactionCountInFiles + "\'");
+
+			EFTBakerOutputHeader(fileName);
+			writeBakerFileDetailsToExcel();
+
+			/*
+			 * compareFileAndDBBakerEFT(
+			 * "C:\\Users\\VG86168.NAM\\Desktop\\EPS_Automation\\Sample\\Sample.xlsx",
+			 * "C:\\Users\\VG86168.NAM\\Desktop\\EPS_Automation\\Sample\\Verify_database_tables_BAKER42.xlsx",
+			 * "BAKER");
+			 */
+
+			br.close();
+			fr.close();
+
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "FileToExcelCreatedSuccessfully" + ApplicationsVariables_Common.reportSpace10
+							+ ApplicationsVariables_Common.reportSpace17 + "\'" + fileName + "\'");
+
+		} catch (Exception exception) {
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "ERROR BakerFileToExcel" + ApplicationsVariables_Common.reportSpace10 + ""
+							+ ApplicationsVariables_Common.reportSpace17 + "\'" + "" + "\'");
+			throw new Exception(exception);
+		}
+	}
+
+	public static void writeBakerFileDetailsToExcel() throws FileNotFoundException, IOException {
+
+		for (int rowIterator = 1; rowIterator <= transactionCountInFiles; rowIterator++) {
+			fileOutputRow = fileOutputSheet.createRow(rowIterator);
+			fileOutputRow.createCell(0).setCellValue(creditOrDebit.get(rowIterator - 1));
+			fileOutputRow.createCell(1).setCellValue(branchCode.get(rowIterator - 1));
+			fileOutputRow.createCell(2).setCellValue(amount.get(rowIterator - 1));
+			fileOutputRow.createCell(3).setCellValue(transactionDate.get(rowIterator - 1));
+			fileOutputRow.createCell(4).setCellValue(payerIDNumber.get(rowIterator - 1));
+			fileOutputRow.createCell(5).setCellValue(payerPayeeAcc.get(rowIterator - 1));
+			fileOutputRow.createCell(6).setCellValue(payerPayeeDet.get(rowIterator - 1));
+			fileOutputRow.createCell(7).setCellValue(relationshipName.get(rowIterator - 1));
+			fileOutputRow.createCell(8).setCellValue(referenceIdentification.get(rowIterator - 1));
+
+		}
+		fileOutputWorkbook.write(new FileOutputStream(fileMappingExcel));
+		Reporter.setTestRunnerOutput(
+				"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+						+ "writeBakerFileDetailsToExcel"
+						+ ApplicationsVariables_Common.reportSpace17 + "\'"+"Success"+"\'");
+	}
+
+	public static void compareFileAndDBBakerEFT(String fileWorkBookPath, String dbWorkBookPath,
+			String sheetNameInFileMapping, String baseFile) throws Exception {
+		try {
+			fileWorkBook = new XSSFWorkbook(new FileInputStream(fileWorkBookPath));
+			dbWorkBook = new XSSFWorkbook(new FileInputStream(dbWorkBookPath));
+
+			if (sheetNameInFileMapping.equalsIgnoreCase("null")) {
+				fileSheet = fileWorkBook.getSheetAt(0);
+			} else {
+				fileSheet = fileWorkBook.getSheet(sheetNameInFileMapping);
+			}
+			dbSheet = dbWorkBook.getSheetAt(0);
+
+			int noOfRowsFileExcel = fileSheet.getLastRowNum();
+
+			int noOfRowsdbExcel = dbSheet.getLastRowNum();
+			int noOfRowsColumn = fileSheet.getRow(0).getLastCellNum() - 1;
+			int dbSheetColumnIndex;
+
+			String fileCellValue = null;
+			String dbCellValue = null;
+			String fileExcelIdenValue = null;
+			String dbExcelIdenValue = null;
+			String fileSheetColumnName = null;
+
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "FileToDBComparison" + ApplicationsVariables_Common.reportSpace17 + "\'" +"Started"+"\'");
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "SourceExcel" + ApplicationsVariables_Common.reportSpace10 + "\'" + fileWorkBookPath);
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName + 
+					ApplicationsVariables_Common.reportSpace17 + "DestinationExcel"
+					+ ApplicationsVariables_Common.reportSpace10 + "\'" + dbWorkBookPath + "\'");
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName + 
+					ApplicationsVariables_Common.scenarioName
+					+ ApplicationsVariables_Common.reportSpace10 + "SourceSheet"
+					+ ApplicationsVariables_Common.reportSpace10 + "\'" + fileSheet.getSheetName() + "\'");
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName + 
+					ApplicationsVariables_Common.reportSpace17 + "DestinationSheet"
+					+ ApplicationsVariables_Common.reportSpace10 + "\'" + dbSheet.getSheetName() + "\'");
+
+			int fileExcelIdentificationIndex = getColumnIndex(fileSheet, "Reference Identification");
+			int DBExcelIdentificationIndex = getColumnIndex(dbSheet, "Reference Identification");
+			if (noOfRowsFileExcel == noOfRowsdbExcel) {
+				for (int fileExcelRowIterator = 1; fileExcelRowIterator <= noOfRowsFileExcel; fileExcelRowIterator++) {
+					fileExcelIdenValue = fileSheet.getRow(fileExcelRowIterator).getCell(fileExcelIdentificationIndex)
+							.toString().trim();
+					for (int dbExcelRowIterator = 1; dbExcelRowIterator <= noOfRowsdbExcel; dbExcelRowIterator++) {
+						dbExcelIdenValue = dbSheet.getRow(dbExcelRowIterator).getCell(DBExcelIdentificationIndex)
+								.toString().trim();
+						if (fileExcelIdenValue.equalsIgnoreCase(dbExcelIdenValue)) {
+							for (int fileExcelColumnIterator = 0; fileExcelColumnIterator <= noOfRowsColumn; fileExcelColumnIterator++) {
+								fileSheetColumnName = fileSheet.getRow(0).getCell(fileExcelColumnIterator).toString();
+
+								if (checkIgnoreColumn(baseFile, fileSheetColumnName)) {
+
+									// System.out.println("Inside Ignore
+									// Column");
+
+									dbSheetColumnIndex = getColumnIndex(dbSheet, fileSheetColumnName);
+									fileCellValue = fileSheet.getRow(fileExcelRowIterator)
+											.getCell(fileExcelColumnIterator).toString().trim();
+									dbCellValue = dbSheet.getRow(dbExcelRowIterator).getCell(dbSheetColumnIndex)
+											.toString().trim();
+									if (fileSheetColumnName.equalsIgnoreCase("DR/CR")){
+										fileCellValue=fileCellValue.replace("C", "CR");
+									}
+									else{ 
+										fileCellValue=fileCellValue.replace("D", "DR");
+									}
+									
+									if (fileCellValue.equalsIgnoreCase(dbCellValue)) {
+
+										
+										/*
+										 * Reporter.setTestRunnerOutput( "<br>"
+										 * + ApplicationsVariables_Common.
+										 * scenarioName +
+										 * ApplicationsVariables_Common.
+										 * reportSpace10 + "Value Matching" +
+										 * ApplicationsVariables_Common.
+										 * reportSpace10 + "\'" + fileCellValue
+										 * + "\'" +
+										 * ApplicationsVariables_Common.
+										 * reportSpace17 + "\'" + dbCellValue +
+										 * "\'");
+										 */
+									} 
+									
+									
+									else {
+
+										Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName
+												+ ApplicationsVariables_Common.reportSpace10 + "Value Mis-Matching"
+												+ ApplicationsVariables_Common.reportSpace10 + "\'" + fileCellValue
+												+ "\'" + ApplicationsVariables_Common.reportSpace17 + "\'" + dbCellValue
+												+ "\'");
+
+									}
+
+								}
+
+							}
+
+						}
+					}
+				}
+			} else {
+				
+				Reporter.setTestRunnerOutput(
+						"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+								+ "GivenExcelsRows-Mis-matching."+ ApplicationsVariables_Common.reportSpace17 + "ComparisionFailure");
+			}
+		} catch (Exception exception) {
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "GivenExcels" + ApplicationsVariables_Common.reportSpace10 + "NotCompared"
+							+ ApplicationsVariables_Common.reportSpace10);
+			throw new Exception(exception);
+		}
+	}
+
+	
+	public static void compareDBAndUI(String dbWorkbook, String UiWorkbook,
+			String sheetNameInFileMapping, String baseFile) throws Exception {
+		try {
+			fileWorkBook = new XSSFWorkbook(new FileInputStream(dbWorkbook));
+			UIfileWorkBook = new HSSFWorkbook(new FileInputStream(UiWorkbook));
+
+			if (sheetNameInFileMapping.equalsIgnoreCase("null")) {
+				fileSheet = fileWorkBook.getSheetAt(0);
+			} else {
+				fileSheet = fileWorkBook.getSheet(sheetNameInFileMapping);
+			}
+			UIfileSheet = UIfileWorkBook.getSheetAt(0);
+			
+			//create compare excel header
+			ComparisonExcelHeader();
+
+			int noOfRowsFileExcel = fileSheet.getLastRowNum();
+
+			int noOfRowsdbExcel = UIfileSheet.getLastRowNum();
+			int noOfRowsColumn = fileSheet.getRow(0).getLastCellNum() - 1;
+			int dbSheetColumnIndex;
+
+			String fileCellValue = null;
+			String dbCellValue = null;
+			String fileExcelIdenValue = null;
+			String dbExcelIdenValue = null;
+			String fileSheetColumnName = null;
+			
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "DBToUIComparison" + ApplicationsVariables_Common.reportSpace17 + "\'" +"Started"+"\'");
+
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "SourceExcel" + ApplicationsVariables_Common.reportSpace10 + "\'" + dbWorkbook);
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10 
+					+ "DestinationExcel"+ ApplicationsVariables_Common.reportSpace10 + "\'" + UiWorkbook + "\'");
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName
+					+ ApplicationsVariables_Common.reportSpace10 + "SourceSheet"
+					+ ApplicationsVariables_Common.reportSpace10 + "\'" + fileSheet.getSheetName() + "\'");
+
+			Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName + 
+					ApplicationsVariables_Common.reportSpace10 + "DestinationSheet"
+					+ ApplicationsVariables_Common.reportSpace10 + "\'" + UIfileSheet.getSheetName() + "\'");
+
+			int fileExcelIdentificationIndex = getColumnIndex(fileSheet, "Reference Identification");
+			int DBExcelIdentificationIndex = getColumnIndex(UIfileSheet, "Reference Identification");
+			if (noOfRowsFileExcel == noOfRowsdbExcel) {
+				for (int fileExcelRowIterator = 1; fileExcelRowIterator <= noOfRowsFileExcel; fileExcelRowIterator++) {
+					fileExcelIdenValue = fileSheet.getRow(fileExcelRowIterator).getCell(fileExcelIdentificationIndex)
+							.toString().trim();
+					for (int dbExcelRowIterator = 1; dbExcelRowIterator <= noOfRowsdbExcel; dbExcelRowIterator++) {
+						dbExcelIdenValue = UIfileSheet.getRow(dbExcelRowIterator).getCell(DBExcelIdentificationIndex)
+								.toString().trim();
+						if (fileExcelIdenValue.equalsIgnoreCase(dbExcelIdenValue)) {
+							
+							fileList = new ArrayList<String>();
+							dbList = new ArrayList<String>();
+							statusList = new ArrayList<String>();
+							fileList.add(fileExcelIdenValue);
+							dbList.add(dbExcelIdenValue);
+							statusList.add("status");
+							
+							for (int fileExcelColumnIterator = 0; fileExcelColumnIterator <= noOfRowsColumn; fileExcelColumnIterator++) {
+								fileSheetColumnName = fileSheet.getRow(0).getCell(fileExcelColumnIterator).toString();
+								
+								if (checkIgnoreColumn(baseFile, fileSheetColumnName)) {
+
+									// System.out.println("Inside Ignore
+									// Column");
+
+									dbSheetColumnIndex = getColumnIndex(UIfileSheet, fileSheetColumnName);
+									
+									fileCellValue = fileSheet.getRow(fileExcelRowIterator)
+											.getCell(fileExcelColumnIterator).toString().trim();
+									dbCellValue = UIfileSheet.getRow(dbExcelRowIterator).getCell(dbSheetColumnIndex)
+											.toString().trim();
+									
+									if (fileSheetColumnName.equalsIgnoreCase("Payee/Payor Account")){
+										int dblength = fileCellValue.length();
+										fileCellValue = fileCellValue.substring(dblength-3, dblength);
+										
+										dbCellValue = dbCellValue.substring(9, 12);
+									}
+									
+									 
+									if (fileCellValue.equalsIgnoreCase(dbCellValue)) {
+										
+										writeStatusToList(fileExcelIdenValue, dbExcelIdenValue, fileCellValue, dbCellValue, "Match" );
+
+										
+										/*
+										 * Reporter.setTestRunnerOutput( "<br>"
+										 * + ApplicationsVariables_Common.
+										 * scenarioName +
+										 * ApplicationsVariables_Common.
+										 * reportSpace10 + "Value Matching" +
+										 * ApplicationsVariables_Common.
+										 * reportSpace10 + "\'" + fileCellValue
+										 * + "\'" +
+										 * ApplicationsVariables_Common.
+										 * reportSpace17 + "\'" + dbCellValue +
+										 * "\'");
+										 */
+									} else {
+
+										Reporter.setTestRunnerOutput("<br>" + ApplicationsVariables_Common.scenarioName
+												+ ApplicationsVariables_Common.reportSpace10 + "Value Mis-Matching"
+												+ ApplicationsVariables_Common.reportSpace10 + "\'" + fileCellValue
+												+ "\'" + ApplicationsVariables_Common.reportSpace17 + "\'" + dbCellValue
+												+ "\'");
+										writeStatusToList(fileExcelIdenValue, dbExcelIdenValue, fileCellValue, dbCellValue, "MisMatch" );
+
+									}
+
+								}
+
+							}
+
+						}
+					}
+					writetoExcel();
+				}
+			} else {
+				Reporter.setTestRunnerOutput(
+						"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+								+ "GivenExcelsRows-Mis-matching."+ ApplicationsVariables_Common.reportSpace17 + "ComparisonFailure");
+			}
+		} catch (Exception exception) {
+			Reporter.setTestRunnerOutput(
+					"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+							+ "GivenExcels" + ApplicationsVariables_Common.reportSpace10 + "NotCompared"
+							+ ApplicationsVariables_Common.reportSpace10);
+			throw new Exception(exception);
+		}
+	}
+	public static boolean checkIgnoreColumn(String baseFile, String columnName) {
+		if (baseFile.equalsIgnoreCase("DBToUI")) {
+			if ((Arrays.asList(ApplicationsVariables_Common.ignoreColumnDBToUI.split(",")).contains(columnName))) {
+				Reporter.setTestRunnerOutput(
+						"<br>" + ApplicationsVariables_Common.scenarioName + ApplicationsVariables_Common.reportSpace10
+								+ "ColumnIgnored"+ ApplicationsVariables_Common.reportSpace17 + columnName);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static int getColumnIndex(XSSFSheet sheet, String columnName) {
+		int index = -1;
+		Iterator<Cell> cellIterator = sheet.getRow(0).cellIterator();
+		while (cellIterator.hasNext()) {
+			Cell cell = (Cell) cellIterator.next();
+			if (cell.getStringCellValue().contentEquals(columnName)) {
+				// System.out.println(columnName+" : found");
+				index = cell.getColumnIndex();
+				break;
+			}
+		}
+		if (index == -1) {
+			System.out.println("ColumnName '" + columnName + "' Not found in sheet '" + sheet.getSheetName() + "'");
+		}
+		return index;
+	}
+	
+	private static int getColumnIndex(HSSFSheet sheet, String columnName) {
+		int index = -1;
+		Iterator<Cell> cellIterator = sheet.getRow(0).cellIterator();
+		while (cellIterator.hasNext()) {
+			Cell cell = (Cell) cellIterator.next();
+			if (cell.getStringCellValue().contentEquals(columnName)) {
+				// System.out.println(columnName+" : found");
+				index = cell.getColumnIndex();
+				break;
+			}
+		}
+		if (index == -1) {
+			System.out.println("ColumnName '" + columnName + "' Not found in sheet '" + sheet.getSheetName() + "'");
+		}
+		return index;
+	}
+
+	public static String removeLeadingZeros(String str) {
+		// Count leading zeros
+		int i = 0;
+		
+		while (str.charAt(i) == '0')
+			i++;
+		// Convert str into StringBuffer as Strings
+		// are immutable.
+		StringBuffer sb = new StringBuffer(str);
+
+		// The StringBuffer replace function removes
+		// i characters from given index (0 here)
+		sb.replace(0, i, "");
+
+		return sb.toString(); // return in String
+	}
+
+	public static String modifyDateFormat(String date) throws ParseException {
+		// 20190602
+		return new SimpleDateFormat("MMM dd, yyyy").format(new SimpleDateFormat("yyyyddMM").parse(date));
+
+	}
+	public static void ComparisonExcelHeader() throws FileNotFoundException, IOException {
+		
+		compareExcelDir = new File(System.getProperty("user.dir") + "/Test Reports/"+TestNGCukesRunner.testResultFolderName);
+		compareExcelDir.mkdir();
+		compareExcel = new File(compareExcelDir + "/" + "Compare Excel" + ".xlsx");
+		if (compareExcel.exists()) {
+			compareExcelWorkbook = new XSSFWorkbook(
+					new FileInputStream(compareExcel));
+
+		} else {
+			compareExcelWorkbook = new XSSFWorkbook();
+		}
+		//headingstyle = stylingCells(compareExcelWorkbook);
+
+		compareExcelSheet = compareExcelWorkbook.createSheet("Compare Excel");
+		
+		if (compareExcelRowNum == 0) {
+			compareExcelRow = compareExcelSheet.createRow(compareExcelRowNum);
+			
+			compareExcelRow.createCell(0).setCellValue("Reference Identification");
+			compareExcelRow.createCell(1).setCellValue("DR/CR");
+			compareExcelRow.createCell(2).setCellValue("Branch Code");
+			compareExcelRow.createCell(3).setCellValue("Amount");
+			compareExcelRow.createCell(4).setCellValue("Original Value Date");
+			compareExcelRow.createCell(5).setCellValue("Institution");
+			compareExcelRow.createCell(6).setCellValue("Payee/Payor Account");
+			compareExcelRow.createCell(7).setCellValue("Payee/Payor");
+			compareExcelRow.createCell(8).setCellValue("Relationship Name");
+			
+		}
+
+		compareExcelWorkbook.write(new FileOutputStream(compareExcel));
+		compareExcelRowNum++;
+
+	}
+	
+	public static void writeStatusToList(String fileIden, String dbIden, String fileCellValue, String dbCellValue, String status) {
+		
+		/*if(fileList.size()==0) {
+			fileList.add(fileIden);
+			dbList.add(dbIden);
+			statusList.add("status");
+		}*/
+		fileList.add(fileCellValue);
+		dbList.add(dbCellValue);
+		statusList.add(status);
+	}
+	
+	public static void writetoExcel() throws FileNotFoundException, IOException {
+		
+		compareExcelDir = new File(System.getProperty("user.dir") + "/Test Reports/"+TestNGCukesRunner.testResultFolderName);
+		compareExcelDir.mkdir();
+		compareExcel = new File(compareExcelDir + "/" + "Compare Excel" + ".xlsx");
+		if (compareExcel.exists()) {
+			compareExcelWorkbook = new XSSFWorkbook(
+					new FileInputStream(compareExcel));
+
+		} else {
+			compareExcelWorkbook = new XSSFWorkbook();
+		}
+
+		compareExcelSheet = compareExcelWorkbook.getSheetAt(0);
+
+		compareExcelRow = compareExcelSheet.createRow(compareExcelRowNum);
+		for (int fileListItr = 0; fileListItr < fileList.size(); fileListItr++) {
+			compareExcelRow.createCell(fileListItr).setCellValue(fileList.get(fileListItr));
+		}
+
+		compareExcelRowNum++;
+		compareExcelRow = compareExcelSheet.createRow(compareExcelRowNum);
+		for (int dbListItr = 0; dbListItr < dbList.size(); dbListItr++) {
+			compareExcelRow.createCell(dbListItr).setCellValue(dbList.get(dbListItr)); //
+		}
+		
+		compareExcelRowNum++;
+		compareExcelRow = compareExcelSheet.createRow(compareExcelRowNum);
+		for (int statusListItr = 0; statusListItr < statusList.size(); statusListItr++) {
+			compareExcelRow.createCell(statusListItr).setCellValue(statusList.get(statusListItr)); //
+		}
+		
+		compareExcelRowNum += 1;
+
+		compareExcelWorkbook.write(new FileOutputStream(compareExcel));
+	}
+
+}
