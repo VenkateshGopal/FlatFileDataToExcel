@@ -1,0 +1,12 @@
+public interface ExcelUtilityColumnNames {
+	public static String debitORCredit = "DR/CR";
+	public static String branchCodes = "Branch Code";
+	public static String Amount = "Amount";
+	public static String OriginalValueDate = "Original Value Date";
+	public static String Institution = "Institution";
+	public static String PayeeOrPayorAccount = "Payee/Payor Account";
+	public static String PayeeOrPayor = "Payee/Payor";
+	public static String Relationshipname = "Relationship Name";
+	public static String ReferenceIdentification = "Reference Identification";
+		
+}
